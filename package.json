@@ -1,0 +1,21 @@
+{
+  "name": "event-hub",
+  "version": "1.0.0",
+  "description": "EventHub REST API for managing workshops and bookings",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^7.5.0",
+    "mongoose": "^8.3.1",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
