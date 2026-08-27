@@ -6,6 +6,7 @@ const dbConnect = require("./config/db-connect");
 const authRouter = require("./routes/auth");
 const eventRouter = require("./routes/event");
 const bookingRouter = require("./routes/booking");
+const userRouter = require("./routes/user-routes");
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.get("/", (req, res) => {
   res.status(200).json({ status: "success", message: "EventHub API is running..." });
 });
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/users", userRouter);
 app.use("/api/v1/events", eventRouter);
 app.use("/api/v1/bookings", bookingRouter);
 

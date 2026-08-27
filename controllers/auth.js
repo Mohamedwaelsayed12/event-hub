@@ -1,68 +1,85 @@
-const User = require("../modules/user");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const User = require("../models/user-model");
+const bcryptjs = require("bcryptjs");
+const generateToken = require("../utils/get-jwt");
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+// Optional utility if file upload cleanup is implemented
+const deleteUploadedFile = (folder, filename) => {
+  // Implementation depends on your multer cleanup logic
 };
 
-const register = async (req, res) => {
+// 1. User Registration (Sign Up)
+const signup = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ status: "fail", message: "Email already registered" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const newUser = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || "attendee",
+    const user = await User.create({
+      ...req.body,
+      role: "student",
+      imageUrl: req.file?.filename,
     });
 
-    const token = generateToken(newUser._id);
+    const token = generateToken(user);
 
     res.status(201).json({
       status: "success",
+      message: "User created successfully",
       token,
-      data: {
-        user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role },
-      },
+      data: { user },
     });
   } catch (error) {
-    res.status(400).json({ status: "error", message: error.message });
+    if (req.file && typeof deleteUploadedFile === "function") {
+      deleteUploadedFile("users", req.file.filename);
+    }
+    res.status(400).json({
+      status: "error",
+      message: `Error in signup: ${error.message}`,
+    });
   }
 };
 
-const login = async (req, res) => {
+// 2. User Login (Sign In)
+const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ status: "fail", message: "Please provide email and password" });
+      return res.status(400).json({
+        status: "fail",
+        message: "Email and Password are required.",
+      });
     }
 
-    const user = await User.findOne({ email });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ status: "fail", message: "Incorrect email or password" });
+    // Explicitly select password field since select: false is set in schema
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Invalid email or password",
+      });
     }
 
-    const token = generateToken(user._id);
+    const comparePasswords = await bcryptjs.compare(password, user.password);
+    if (!comparePasswords) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Invalid email or password",
+      });
+    }
+
+    // Remove password from response payload
+    user.password = undefined;
+
+    const token = generateToken(user);
 
     res.status(200).json({
       status: "success",
       token,
-      data: {
-        user: { id: user._id, name: user.name, email: user.email, role: user.role },
-      },
+      data: { user },
     });
   } catch (error) {
-    res.status(400).json({ status: "error", message: error.message });
+    res.status(400).json({
+      status: "error",
+      message: `Error in signin: ${error.message}`,
+    });
   }
 };
 
-module.exports = { register, login };
+module.exports = { signup, signin };

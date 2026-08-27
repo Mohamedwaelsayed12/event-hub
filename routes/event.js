@@ -1,25 +1,9 @@
 const express = require("express");
-const {
-  getAllEvents,
-  getEventById,
-  createEvent,
-  updateEvent,
-  deleteEvent,
-} = require("../controllers/event");
-const { protect, restrictTo } = require("../middleware/auth");
-const upload = require("../middleware/upload");
-
 const router = express.Router();
+const upload = require("../middleware/upload");
+const { createEvent } = require("../controllers/event");
 
-router
-  .route("/")
-  .get(getAllEvents)
-  .post(protect, restrictTo("organizer", "admin"), upload.single("image"), createEvent);
-
-router
-  .route("/:id")
-  .get(getEventById)
-  .patch(protect, restrictTo("organizer", "admin"), upload.single("image"), updateEvent)
-  .delete(protect, restrictTo("organizer", "admin"), deleteEvent);
+// Add upload.single("banner") before the controller execution
+router.post("/", upload.single("banner"), createEvent);
 
 module.exports = router;
